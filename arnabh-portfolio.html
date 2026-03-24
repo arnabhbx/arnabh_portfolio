@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>arnabh@portfolio:~$</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:         #0d1117;
+            --surface:    #161b22;
+            --surface2:   #21262d;
+            --border:     #30363d;
+            --arch:       #1793d1;
+            --arch-glow:  rgba(23,147,209,0.15);
+            --green:      #3fb950;
+            --yellow:     #d29922;
+            --orange:     #f0883e;
+            --text:       #e6edf3;
+            --text-muted: #8b949e;
+            --text-dim:   #484f58;
+            --mono:       'JetBrains Mono', monospace;
+            --sans:       'Sora', sans-serif;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--mono);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.025) 2px, rgba(0,0,0,0.025) 4px);
+            pointer-events: none;
+            z-index: 9000;
+        }
+
+        /* ===== BOOT SCREEN ===== */
+        #boot-screen {
+            position: fixed; inset: 0; background: #000; z-index: 9999;
+            display: flex; flex-direction: column;
+            padding: 48px 52px; font-family: var(--mono); font-size: 13px;
+            transition: opacity 0.9s ease; cursor: pointer; overflow: hidden;
+        }
+        #boot-screen.fade-out { opacity: 0; pointer-events: none; }
+        .boot-header {
+            color: #555; font-size: 12px; margin-bottom: 28px;
+            border-bottom: 1px solid #1a1a1a; padding-bottom: 16px;
+        }
+        .boot-header span { color: var(--arch); }
+        .boot-line {
+            display: flex; align-items: flex-start; gap: 14px;
+            margin-bottom: 5px; opacity: 0; transform: translateY(4px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .boot-line.visible { opacity: 1; transform: translateY(0); }
+        .boot-badge { font-weight: 700; font-size: 12px; white-space: nowrap; min-width: 64px; }
+        .boot-badge.ok   { color: var(--green); }
+        .boot-badge.boot { color: var(--arch); }
+        .boot-badge.warn { color: var(--yellow); }
+        .boot-msg { color: #999; }
+        .boot-skip-hint { position: absolute; bottom: 48px; right: 52px; color: #333; font-size: 11px; }
+
+        /* ===== NAV ===== */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(13,17,23,0.88); backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border); height: 56px;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 48px;
+        }
+        .nav-logo { font-size: 13px; letter-spacing: 0.02em; }
+        .nav-logo .u { color: var(--arch); font-weight: 600; }
+        .nav-logo .h { color: var(--green); }
+        .nav-logo .d { color: var(--text-dim); }
+        .nav-links { display: flex; gap: 4px; list-style: none; }
+        .nav-links a {
+            font-size: 12px; color: var(--text-dim); text-decoration: none;
+            padding: 5px 12px; border-radius: 4px; transition: all 0.18s; border: 1px solid transparent;
+        }
+        .nav-links a:hover { color: var(--arch); border-color: rgba(23,147,209,0.25); background: var(--arch-glow); }
+
+        /* ===== HERO ===== */
+        #hero {
+            min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+            padding: 100px 48px 60px; max-width: 1160px; margin: 0 auto; position: relative;
+        }
+        #hero::before {
+            content: ''; position: absolute; inset: 0;
+            background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 60px 60px; opacity: 0.18; pointer-events: none;
+            mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 100%);
+        }
+        .hero-prompt { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; display: flex; align-items: center; gap: 2px; }
+        .hero-prompt .u { color: var(--arch); }
+        .hero-prompt .h { color: var(--green); }
+        .hero-name {
+            font-family: var(--sans); font-size: clamp(72px, 11vw, 128px);
+            font-weight: 700; line-height: 0.88; letter-spacing: -4px;
+            color: var(--text); margin-bottom: 28px; position: relative;
+        }
+        .hero-name .accent { color: var(--arch); }
+        .hero-name .glow {
+            position: absolute; left: -8px; top: 0; filter: blur(60px); opacity: 0.12;
+            font-size: inherit; color: var(--arch); pointer-events: none; user-select: none;
+        }
+        .hero-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; align-items: center; }
+        .badge {
+            font-size: 11px; padding: 4px 11px; border-radius: 4px;
+            border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); transition: all 0.2s;
+        }
+        .badge:hover { border-color: var(--arch); color: var(--arch); }
+        .badge.active {
+            border-color: rgba(63,185,80,0.35); background: rgba(63,185,80,0.07);
+            color: var(--green); display: inline-flex; align-items: center; gap: 6px;
+        }
+        .pulse-dot {
+            width: 6px; height: 6px; background: var(--green); border-radius: 50%;
+            animation: pulseDot 2s ease-in-out infinite;
+        }
+        @keyframes pulseDot {
+            0%,100% { box-shadow: 0 0 0 0 rgba(63,185,80,0.5); }
+            50%      { box-shadow: 0 0 0 5px rgba(63,185,80,0); }
+        }
+        .hero-desc {
+            font-size: 14px; color: var(--text-muted); line-height: 1.75;
+            max-width: 560px; border-left: 2px solid var(--arch); padding-left: 18px; margin-bottom: 44px;
+        }
+        .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
+        .btn {
+            font-family: var(--mono); font-size: 13px; padding: 10px 22px; border-radius: 5px;
+            text-decoration: none; transition: all 0.2s; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 8px; border: 1px solid transparent;
+        }
+        .btn-primary { background: var(--arch); color: #fff; border-color: var(--arch); }
+        .btn-primary:hover { background: transparent; color: var(--arch); }
+        .btn-ghost { background: transparent; color: var(--text-muted); border-color: var(--border); }
+        .btn-ghost:hover { border-color: var(--arch); color: var(--arch); }
+
+        /* ===== SECTIONS ===== */
+        .section-wrap { border-top: 1px solid var(--border); padding: 96px 0; }
+        .section-inner { max-width: 1160px; margin: 0 auto; padding: 0 48px; }
+        .section-header { display: flex; align-items: center; gap: 20px; margin-bottom: 56px; }
+        .section-cmd { font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+        .section-cmd .dollar { color: var(--arch); margin-right: 4px; }
+        .divider { flex: 1; height: 1px; background: var(--border); }
+        .section-title { font-family: var(--sans); font-size: 28px; font-weight: 700; color: var(--text); white-space: nowrap; }
+
+        /* ===== ABOUT ===== */
+        .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
+        .term { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .term-bar {
+            background: var(--surface2); padding: 10px 16px; display: flex;
+            align-items: center; gap: 7px; border-bottom: 1px solid var(--border);
+        }
+        .dot { width: 11px; height: 11px; border-radius: 50%; }
+        .dot-r { background: #f85149; }
+        .dot-y { background: #d29922; }
+        .dot-g { background: #3fb950; }
+        .term-title { font-size: 11px; color: var(--text-dim); margin-left: 10px; }
+        .term-body { padding: 20px 22px; font-size: 12.5px; line-height: 1.85; }
+        .t-c { color: var(--text-dim); } .t-k { color: var(--arch); }
+        .t-s { color: var(--orange); }  .t-v { color: var(--green); }
+        .t-p { color: var(--text-dim); }
+        .about-text { font-size: 13.5px; color: var(--text-muted); line-height: 1.8; margin-bottom: 20px; }
+        .about-facts { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+        .fact { display: flex; gap: 12px; align-items: baseline; font-size: 13px; }
+        .fact-arrow { color: var(--arch); flex-shrink: 0; }
+        .fact-label { color: var(--text-dim); min-width: 100px; }
+        .fact-val { color: var(--text); }
+
+        /* ===== SKILLS ===== */
+        .skills-stack { display: flex; flex-direction: column; gap: 20px; }
+        .skill-group { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; transition: border-color 0.2s; }
+        .skill-group:hover { border-color: rgba(23,147,209,0.35); }
+        .skill-group-hdr {
+            background: var(--surface2); padding: 9px 18px; border-bottom: 1px solid var(--border);
+            font-size: 11.5px; color: var(--text-dim); display: flex; align-items: center; gap: 10px;
+        }
+        .skill-group-hdr .cmd { color: var(--arch); }
+        .skill-pills { padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+        .skill-pill {
+            background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted);
+            padding: 5px 13px; font-size: 12px; border-radius: 4px; transition: all 0.18s; cursor: default;
+        }
+        .skill-pill:hover { border-color: var(--arch); color: var(--arch); background: var(--arch-glow); }
+
+        /* ===== TIMELINE ===== */
+        .timeline { position: relative; padding-left: 40px; }
+        .timeline::before {
+            content: ''; position: absolute; left: 0; top: 10px; bottom: 0; width: 1px;
+            background: linear-gradient(to bottom, var(--arch), var(--border) 80%, transparent);
+        }
+        .tl-item { position: relative; margin-bottom: 52px; }
+        .tl-item:last-child { margin-bottom: 0; }
+        .tl-item::before {
+            content: ''; position: absolute; left: -44px; top: 10px;
+            width: 9px; height: 9px; border-radius: 50%; background: var(--arch);
+            border: 2px solid var(--bg); box-shadow: 0 0 0 1px var(--arch), 0 0 10px rgba(23,147,209,0.4);
+        }
+        .tl-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+        .tl-period { font-size: 11px; color: var(--arch); background: rgba(23,147,209,0.1); border: 1px solid rgba(23,147,209,0.25); padding: 2px 9px; border-radius: 4px; }
+        .tl-loc { font-size: 11px; color: var(--text-dim); }
+        .tl-role { font-family: var(--sans); font-size: 20px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+        .tl-company { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
+        .tl-desc { font-size: 13px; color: var(--text-muted); line-height: 1.75; }
+        .tl-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+        .tl-tag { font-size: 11px; padding: 3px 9px; background: var(--surface); border: 1px solid var(--border); color: var(--text-dim); border-radius: 4px; }
+
+        /* ===== CONTACT ===== */
+        .contact-intro { font-size: 14px; color: var(--text-muted); line-height: 1.75; max-width: 560px; margin-bottom: 36px; }
+        .contact-intro .hi { color: var(--arch); }
+        .contact-links { display: flex; flex-direction: column; gap: 12px; max-width: 520px; }
+        .contact-link {
+            display: flex; align-items: center; gap: 16px; padding: 16px 20px;
+            background: var(--surface); border: 1px solid var(--border); border-radius: 8px; text-decoration: none; transition: all 0.2s;
+        }
+        .contact-link:hover { border-color: var(--arch); background: var(--arch-glow); }
+        .cl-icon {
+            width: 36px; height: 36px; background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 6px; display: flex; align-items: center; justify-content: center;
+            font-size: 14px; flex-shrink: 0; color: var(--arch);
+        }
+        .cl-label { font-size: 11px; color: var(--text-dim); }
+        .cl-val { font-size: 13px; color: var(--text); }
+        .cl-arrow { margin-left: auto; color: var(--text-dim); font-size: 16px; transition: transform 0.2s, color 0.2s; }
+        .contact-link:hover .cl-arrow { color: var(--arch); transform: translateX(4px); }
+
+        /* ===== FOOTER ===== */
+        footer {
+            border-top: 1px solid var(--border); max-width: 1160px; margin: 0 auto;
+            padding: 22px 48px; display: flex; align-items: center; justify-content: space-between;
+            font-size: 12px; color: var(--text-dim); flex-wrap: wrap; gap: 12px;
+        }
+        .footer-prompt { display: flex; align-items: center; gap: 4px; }
+        .blink-cursor {
+            display: inline-block; width: 9px; height: 14px; background: var(--arch);
+            border-radius: 1px; animation: blinkAnim 1s step-end infinite; vertical-align: middle;
+        }
+        @keyframes blinkAnim { 0%,100% { opacity:1 } 50% { opacity:0 } }
+        .footer-tos {
+            cursor: pointer; color: var(--text-dim); font-size: 12px;
+            border-bottom: 1px dashed var(--text-dim);
+            transition: color 0.2s, border-color 0.2s; user-select: none;
+        }
+        .footer-tos:hover { color: var(--arch); border-color: var(--arch); }
+
+        /* ===== T&C MODAL ===== */
+        #tos-overlay {
+            position: fixed; inset: 0; z-index: 8000;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s ease; padding: 20px;
+        }
+        #tos-overlay.open { opacity: 1; pointer-events: all; }
+        #tos-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+            width: 100%; max-width: 580px; max-height: 85vh; overflow: hidden;
+            display: flex; flex-direction: column;
+            transform: translateY(24px) scale(0.97);
+            transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(23,147,209,0.1);
+        }
+        #tos-overlay.open #tos-card { transform: translateY(0) scale(1); }
+        .tos-bar {
+            background: var(--surface2); border-bottom: 1px solid var(--border);
+            padding: 12px 18px; display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+        }
+        .tos-bar-title { font-size: 11px; color: var(--text-dim); margin-left: 10px; flex: 1; }
+        .tos-close {
+            width: 26px; height: 26px; background: rgba(248,81,73,0.15);
+            border: 1px solid rgba(248,81,73,0.3); border-radius: 5px;
+            color: #f85149; font-size: 13px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.18s; font-family: var(--mono);
+        }
+        .tos-close:hover { background: rgba(248,81,73,0.3); }
+        .tos-header { padding: 22px 26px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        .tos-title { font-family: var(--sans); font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+        .tos-subtitle { font-size: 11px; color: var(--text-dim); }
+        .tos-subtitle span { color: var(--yellow); }
+        .tos-body { padding: 20px 26px; overflow-y: auto; flex: 1; }
+        .tos-body::-webkit-scrollbar { width: 4px; }
+        .tos-body::-webkit-scrollbar-track { background: transparent; }
+        .tos-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+        .tos-clause { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .tos-clause:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .tos-clause-num { font-size: 10px; color: var(--arch); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 5px; }
+        .tos-clause-title { font-family: var(--sans); font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+        .tos-clause-text { font-size: 12px; color: var(--text-muted); line-height: 1.75; }
+        .tos-clause-text em { color: var(--yellow); font-style: normal; }
+        .tos-clause-text strong { color: var(--green); font-style: normal; }
+        .tos-clause-text s { color: var(--text-dim); }
+        .tos-footer {
+            padding: 16px 26px; border-top: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--surface2); flex-shrink: 0;
+        }
+        .tos-footer-note { font-size: 11px; color: var(--text-dim); }
+        .tos-accept {
+            font-family: var(--mono); font-size: 12px; padding: 8px 18px;
+            background: var(--arch); color: #fff; border: none; border-radius: 5px;
+            cursor: pointer; transition: all 0.18s;
+        }
+        .tos-accept:hover { background: rgba(23,147,209,0.8); }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--arch); }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            nav { padding: 0 20px; }
+            .nav-links a { font-size: 11px; padding: 5px 8px; }
+            #hero, .section-inner, footer { padding-left: 20px; padding-right: 20px; }
+            .hero-name { letter-spacing: -2px; }
+            .about-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- BOOT SCREEN -->
+<div id="boot-screen">
+    <div class="boot-header">
+        GNU GRUB 2.06 &#8212; <span>Arnabh's Portfolio</span> build 2026.12 &nbsp;&#183;&nbsp; Arch Linux x86_64
+    </div>
+    <div id="boot-lines"></div>
+    <div class="boot-skip-hint">[ click anywhere or press any key to skip ]</div>
+</div>
+
+<!-- T&C MODAL -->
+<div id="tos-overlay">
+    <div id="tos-card">
+        <div class="tos-bar">
+            <div class="dot dot-r"></div>
+            <div class="dot dot-y"></div>
+            <div class="dot dot-g"></div>
+            <div class="tos-bar-title">terms_and_conditions.txt &#8212; read-only</div>
+            <button class="tos-close" id="tos-close-btn">&#10005;</button>
+        </div>
+        <div class="tos-header">
+            <div class="tos-title">Terms &amp; Conditions</div>
+            <div class="tos-subtitle">Last updated: whenever I felt like it &#183; <span>Legally binding in 0 jurisdictions</span></div>
+        </div>
+        <div class="tos-body">
+            <div class="tos-clause">
+                <div class="tos-clause-num">&#167; 1.0 &mdash; ACCEPTANCE</div>
+                <div class="tos-clause-title">By existing near this website, you agree.</div>
+                <div class="tos-clause-text">
+                    By scrolling, blinking, breathing, or simply having this tab open in the background while you watch YouTube,
+                    you have irrevocably, unconditionally, and <em>spiritually</em> agreed to all terms listed herein.
+                    Ignorance is not a defence. Neither is <s>being asleep</s> &mdash; your browser was still open.
+                </div>
+            </div>
+            <div class="tos-clause">
+                <div class="tos-clause-num">&#167; 2.0 &mdash; INTELLECTUAL PROPERTY</div>
+                <div class="tos-clause-title">This is mine. All of it.</div>
+                <div class="tos-clause-text">
+                    All content, design, words, pixels, vibes, and the general <em>aura</em> of this website are the sole property of Arnabh.
+                    You may admire freely. You may screenshot for personal use. You may NOT copy the terminal aesthetic
+                    for your own portfolio without at least <strong>silently acknowledging</strong> that you got the idea here.
+                    We'll know.
+                </div>
+            </div>
+            <div class="tos-clause">
+                <div class="tos-clause-num">&#167; 3.0 &mdash; RECRUITER CLAUSE</div>
+                <div class="tos-clause-title">Special terms apply if you are hiring.</div>
+                <div class="tos-clause-text">
+                    If you are a recruiter, you are legally obligated to reach out within <em>48 hours</em> of viewing this page.
+                    Failure to do so shall result in your LinkedIn connection request being <s>accepted reluctantly</s> accepted warmly.
+                    "We'll keep your resume on file" is a <em>violation</em> of this agreement and may result in passive disappointment.
+                </div>
+            </div>
+            <div class="tos-clause">
+                <div class="tos-clause-num">&#167; 4.0 &mdash; OPERATIONS DISCOURSE</div>
+                <div class="tos-clause-title">Do not start a supply chain debate unless prepared.</div>
+                <div class="tos-clause-text">
+                    Any person who initiates a conversation about inventory management, PPC workflows, or vendor negotiation
+                    must be prepared to receive an <em>enthusiastic 45-minute response</em>.
+                    Arnabh accepts no liability for sudden career interest in logistics
+                    that may result from said conversation. <strong>You were warned.</strong>
+                </div>
+            </div>
+            <div class="tos-clause">
+                <div class="tos-clause-num">&#167; 5.0 &mdash; ENTREPRENEURIAL UNSOLICITED ADVICE</div>
+                <div class="tos-clause-title">Business ideas will be evaluated without being asked.</div>
+                <div class="tos-clause-text">
+                    Arnabh reserves the right to mentally build a <em>financial model</em> for any business idea mentioned in his presence.
+                    A break-even analysis may be produced within 24 hours. You cannot opt out.
+                    This is not a threat. This is a <strong>feature</strong>.
+                </div>
+            </div>
+            <div class="tos-clause">
+                <div class="tos-clause-num">&#167; 6.0 &mdash; FOOD &amp; FITNESS DISCOURSE</div>
+                <div class="tos-clause-title">Do not ask about macros unless you have time.</div>
+                <div class="tos-clause-text">
+                    Queries about diet, protein intake, air fryer recipes, or gym routines shall be answered with
+                    <em>full sincerity and alarming detail</em>. Arnabh accepts no responsibility for unsolicited
+                    nutrition knowledge you now possess. MyFitnessPal may or may not be mentioned.
+                    <strong>Probably will be mentioned.</strong>
+                </div>
+            </div>
+            <div class="tos-clause">
+                <div class="tos-clause-num">&#167; 7.0 &mdash; LIMITATION OF LIABILITY</div>
+                <div class="tos-clause-title">This website is provided "as is", which is pretty good actually.</div>
+                <div class="tos-clause-text">
+                    Arnabh is not responsible for: sudden motivation to fix your own supply chain,
+                    existential crises triggered by the boot animation, extreme jealousy at the Arch Linux aesthetic,
+                    or the <em>undeniable urge</em> to hire him immediately.
+                    Any of the above are your problem now. <strong>Congratulations.</strong>
+                </div>
+            </div>
+            <div class="tos-clause">
+                <div class="tos-clause-num">&#167; 8.0 &mdash; GOVERNING LAW</div>
+                <div class="tos-clause-title">Jurisdiction: New Delhi. Final answer.</div>
+                <div class="tos-clause-text">
+                    All disputes shall be resolved over chai in New Delhi.
+                    If you cannot make it to New Delhi, that is <em>your logistical failure</em> and frankly,
+                    deeply ironic given the supply chain background.
+                    Remote dispute resolution available via strongly-worded email. <strong>Response time: eventually.</strong>
+                </div>
+            </div>
+        </div>
+        <div class="tos-footer">
+            <div class="tos-footer-note">&#169; Arnabh &mdash; All rights reserved (seriously though)</div>
+            <button class="tos-accept" id="tos-accept-btn">$ ./i_agree.sh</button>
+        </div>
+    </div>
+</div>
+
+<!-- NAV -->
+<nav>
+    <div class="nav-logo">
+        <span class="u">arnabh</span><span class="d">@</span><span class="h">arch</span><span class="d">:</span><span class="u">~</span><span class="d">$</span>
+    </div>
+    <ul class="nav-links">
+        <li><a href="#about">./about</a></li>
+        <li><a href="#skills">./skills</a></li>
+        <li><a href="#experience">./experience</a></li>
+        <li><a href="#contact">./contact</a></li>
+    </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+    <div class="hero-prompt">
+        <span class="u">arnabh</span><span style="color:var(--text-dim)">@</span><span class="h">archlinux</span><span style="color:var(--text-dim)">:~$ </span>
+        <span style="color:var(--text-muted); margin-left:2px;">cat profile.txt</span>
+    </div>
+    <div class="hero-name">
+        <span class="glow" aria-hidden="true">ARNABH</span>
+        ARN<span class="accent">ABH</span>
+    </div>
+    <div class="hero-badges">
+        <span class="badge">ECE Graduate</span>
+        <span class="badge">Supply Chain &amp; Ops</span>
+        <span class="badge">Builder</span>
+        <span class="badge">New Delhi &#127470;&#127475;</span>
+        <span class="badge active"><span class="pulse-dot"></span> Open to Work</span>
+    </div>
+    <p class="hero-desc">
+        Electronics grad turned operations professional.
+        Managing supply chain at a manufacturing firm while architecting businesses on the side.
+        Targeting roles in <strong style="color:var(--text)">Production Planning &amp; Control</strong>,
+        <strong style="color:var(--text)">Logistics Analysis</strong> &amp;
+        <strong style="color:var(--text)">Operations Management</strong>.
+    </p>
+    <div class="hero-cta">
+        <a href="#contact" class="btn btn-primary">&#8594; ping me</a>
+        <a href="#experience" class="btn btn-ghost">$ ls experience/</a>
+    </div>
+</section>
+
+<!-- ABOUT -->
+<div class="section-wrap" id="about">
+<div class="section-inner">
+    <div class="section-header">
+        <div class="section-cmd"><span class="dollar">$</span>cat about.txt</div>
+        <div class="divider"></div>
+        <div class="section-title">About</div>
+    </div>
+    <div class="about-grid">
+        <div class="term">
+            <div class="term-bar">
+                <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
+                <div class="term-title">bio.json &#8212; arnabh@arch</div>
+            </div>
+            <div class="term-body">
+                <div><span class="t-c">// arnabh's profile data</span></div>
+                <div>{</div>
+                <div>&nbsp;&nbsp;<span class="t-k">"name"</span><span class="t-p">:</span> <span class="t-s">"Arnabh Bhanja"</span>,</div>
+                <div>&nbsp;&nbsp;<span class="t-k">"location"</span><span class="t-p">:</span> <span class="t-s">"New Delhi, IN"</span>,</div>
+                <div>&nbsp;&nbsp;<span class="t-k">"education"</span><span class="t-p">:</span> {</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-k">"degree"</span><span class="t-p">:</span> <span class="t-s">"B.Tech ECE"</span>,</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-k">"institute"</span><span class="t-p">:</span> <span class="t-s">"GTBIT, Delhi"</span>,</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-k">"year"</span><span class="t-p">:</span> <span class="t-v">2023</span></div>
+                <div>&nbsp;&nbsp;},</div>
+                <div>&nbsp;&nbsp;<span class="t-k">"current_role"</span><span class="t-p">:</span> <span class="t-s">"Supply Chain &amp; Ops"</span>,</div>
+                <div>&nbsp;&nbsp;<span class="t-k">"employer"</span><span class="t-p">:</span> <span class="t-s">"SP Industries"</span>,</div>
+                <div>&nbsp;&nbsp;<span class="t-k">"status"</span><span class="t-p">:</span> <span class="t-v">open_to_work</span>,</div>
+                <div>&nbsp;&nbsp;<span class="t-k">"targeting"</span><span class="t-p">:</span> [</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-s">"PPC"</span>, <span class="t-s">"Logistics Analyst"</span>,</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-s">"Operations Management"</span></div>
+                <div>&nbsp;&nbsp;],</div>
+                <div>&nbsp;&nbsp;<span class="t-k">"interests"</span><span class="t-p">:</span> [</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-s">"entrepreneurship"</span>, <span class="t-s">"fitness"</span>,</div>
+                <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="t-s">"cooking"</span>, <span class="t-s">"tech"</span></div>
+                <div>&nbsp;&nbsp;]</div>
+                <div>}</div>
+            </div>
+        </div>
+        <div>
+            <p class="about-text">I'm a 2023 B.Tech Electronics &amp; Communication Engineering graduate from GTBIT, Delhi, currently driving supply chain and operations at SP Industries &#8212; a family manufacturing business &#8212; while actively building a path into structured, process-driven corporate environments.</p>
+            <p class="about-text">Before SP Industries, I spent time as a Research Analyst at Quinte Financial Technologies, where I sharpened analytical instincts in a fast-paced fintech setting.</p>
+            <p class="about-text" style="color:var(--text-dim);font-size:13px;">When I'm not deep in operations, I'm in the gym, in the kitchen experimenting with Indian cuisine and air fryer tech, or planning the next venture.</p>
+            <div class="about-facts">
+                <div class="fact"><span class="fact-arrow">&#9658;</span><span class="fact-label">Targeting</span><span class="fact-val">PPC &#183; Logistics &#183; Ops Mgmt</span></div>
+                <div class="fact"><span class="fact-arrow">&#9658;</span><span class="fact-label">Currently at</span><span class="fact-val">SP Industries, New Delhi</span></div>
+                <div class="fact"><span class="fact-arrow">&#9658;</span><span class="fact-label">Education</span><span class="fact-val">B.Tech ECE &#183; GTBIT 2023</span></div>
+                <div class="fact"><span class="fact-arrow">&#9658;</span><span class="fact-label">Base</span><span class="fact-val">New Delhi &#127470;&#127475;</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- SKILLS -->
+<div class="section-wrap" id="skills">
+<div class="section-inner">
+    <div class="section-header">
+        <div class="section-cmd"><span class="dollar">$</span>pacman -Q skills</div>
+        <div class="divider"></div>
+        <div class="section-title">Skills</div>
+    </div>
+    <div class="skills-stack">
+        <div class="skill-group">
+            <div class="skill-group-hdr"><span class="cmd">[operations]</span> core competencies</div>
+            <div class="skill-pills">
+                <div class="skill-pill">Production Planning &amp; Control</div>
+                <div class="skill-pill">Supply Chain Management</div>
+                <div class="skill-pill">Logistics &amp; Distribution</div>
+                <div class="skill-pill">Inventory Optimisation</div>
+                <div class="skill-pill">Vendor Management</div>
+                <div class="skill-pill">Procurement</div>
+                <div class="skill-pill">Process Improvement</div>
+                <div class="skill-pill">Operations Strategy</div>
+            </div>
+        </div>
+        <div class="skill-group">
+            <div class="skill-group-hdr"><span class="cmd">[analytics]</span> research &amp; data</div>
+            <div class="skill-pills">
+                <div class="skill-pill">Financial Research &amp; Analysis</div>
+                <div class="skill-pill">Market Research</div>
+                <div class="skill-pill">Business Plan Development</div>
+                <div class="skill-pill">Break-even Analysis</div>
+                <div class="skill-pill">Financial Modelling</div>
+                <div class="skill-pill">Data-driven Decisions</div>
+            </div>
+        </div>
+        <div class="skill-group">
+            <div class="skill-group-hdr"><span class="cmd">[tools]</span> platforms &amp; portals</div>
+            <div class="skill-pills">
+                <div class="skill-pill">MS Excel / Office Suite</div>
+                <div class="skill-pill">ERP Systems</div>
+                <div class="skill-pill">IndiaMart &#183; TradeIndia</div>
+                <div class="skill-pill">GeM Portal</div>
+                <div class="skill-pill">B2B Sales Platforms</div>
+                <div class="skill-pill">AutoCAD</div>
+            </div>
+        </div>
+        <div class="skill-group">
+            <div class="skill-group-hdr"><span class="cmd">[hardware]</span> engineering background</div>
+            <div class="skill-pills">
+                <div class="skill-pill">Electronics &amp; Communication</div>
+                <div class="skill-pill">PCB Design &amp; Assembly</div>
+                <div class="skill-pill">Manufacturing Processes</div>
+                <div class="skill-pill">Component Sourcing</div>
+                <div class="skill-pill">Technical Documentation</div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- EXPERIENCE -->
+<div class="section-wrap" id="experience">
+<div class="section-inner">
+    <div class="section-header">
+        <div class="section-cmd"><span class="dollar">$</span>ls -lt experience/</div>
+        <div class="divider"></div>
+        <div class="section-title">Experience</div>
+    </div>
+    <div class="timeline">
+        <div class="tl-item">
+            <div class="tl-meta"><span class="tl-period">2024 &#8212; Present</span><span class="tl-loc">Full-time &#183; New Delhi, IN</span></div>
+            <div class="tl-role">Supply Chain &amp; Operations</div>
+            <div class="tl-company">SP Industries &#183; Manufacturing</div>
+            <div class="tl-desc">Leading end-to-end supply chain operations at a manufacturing firm. Responsible for procurement strategy, vendor negotiation, inventory control, and logistics coordination. Building operational frameworks, improving lead times, and implementing process improvements across production and distribution workflows.</div>
+            <div class="tl-tags">
+                <span class="tl-tag">Supply Chain</span><span class="tl-tag">Vendor Management</span>
+                <span class="tl-tag">Logistics</span><span class="tl-tag">Procurement</span>
+                <span class="tl-tag">Manufacturing Ops</span><span class="tl-tag">Inventory Control</span>
+            </div>
+        </div>
+        <div class="tl-item">
+            <div class="tl-meta"><span class="tl-period">2023 &#8212; 2024</span><span class="tl-loc">Analyst &#183; Fintech</span></div>
+            <div class="tl-role">Research Analyst</div>
+            <div class="tl-company">Quinte Financial Technologies</div>
+            <div class="tl-desc">Conducted financial and market research supporting investment and strategic decisions. Analysed data trends, built analytical reports, and contributed to research pipelines in a fast-paced fintech environment &#8212; honing both precision and turnaround speed.</div>
+            <div class="tl-tags">
+                <span class="tl-tag">Financial Research</span><span class="tl-tag">Market Analysis</span>
+                <span class="tl-tag">Data Analytics</span><span class="tl-tag">Fintech</span><span class="tl-tag">Reporting</span>
+            </div>
+        </div>
+        <div class="tl-item">
+            <div class="tl-meta"><span class="tl-period">2019 &#8212; 2023</span><span class="tl-loc">Guru Tegh Bahadur Institute of Technology &#183; Delhi</span></div>
+            <div class="tl-role">B.Tech &#8212; Electronics &amp; Communication Engineering</div>
+            <div class="tl-company">GTBIT, Delhi &#183; Graduated 2023</div>
+            <div class="tl-desc">Completed a four-year specialisation in Electronics and Communication Engineering. Built rigorous foundations in circuit design, signal systems, and engineering methodology &#8212; skills that now inform a precise, analytical approach to operations and business strategy.</div>
+            <div class="tl-tags">
+                <span class="tl-tag">ECE</span><span class="tl-tag">Electronics</span>
+                <span class="tl-tag">Circuit Design</span><span class="tl-tag">Engineering</span>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- CONTACT -->
+<div class="section-wrap" id="contact">
+<div class="section-inner">
+    <div class="section-header">
+        <div class="section-cmd"><span class="dollar">$</span>ping arnabh</div>
+        <div class="divider"></div>
+        <div class="section-title">Contact</div>
+    </div>
+    <p class="contact-intro">Currently open to roles in <span class="hi">PPC</span>, <span class="hi">Logistics Analysis</span>, and <span class="hi">Operations Management</span>. Whether you're a recruiter, a collaborator, or just want to talk ops &amp; startups &#8212; drop a message.</p>
+    <div class="contact-links">
+
+        <!-- BUG FIX 1 & 2: Restored clean mailto href and plain email text (CF had obfuscated both) -->
+        <!-- ACTION NEEDED: Replace your@email.com below with your actual email address -->
+        <a href="mailto:arnabhbx@proton.me" class="contact-link">
+            <div class="cl-icon">&#9993;</div>
+            <div><div class="cl-label">Email</div><div class="cl-val">arnabhbx@proton.me</div></div>
+            <span class="cl-arrow">&#8594;</span>
+        </a>
+
+        <!-- BUG FIX 2: href updated to match the display text arnabh-bhanja -->
+        <a href="https://linkedin.com/in/arnabh-bhanja" target="_blank" class="contact-link">
+            <div class="cl-icon" style="font-weight:700;font-size:13px;">in</div>
+            <div><div class="cl-label">LinkedIn</div><div class="cl-val">linkedin.com/in/arnabh-bhanja</div></div>
+            <span class="cl-arrow">&#8594;</span>
+        </a>
+
+    </div>
+</div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+    <div class="footer-prompt">
+        <span style="color:var(--arch)">arnabh</span><span style="color:var(--text-dim)">@</span><span style="color:var(--green)">portfolio</span><span style="color:var(--text-dim)">:~$&nbsp;</span>
+        <span class="blink-cursor"></span>
+    </div>
+    <div>Crafted in New Delhi &#183; 2024</div>
+    <div class="footer-tos" id="tos-trigger">&#169; Arnabh &#8212; Terms &amp; Conditions apply</div>
+</footer>
+
+<!-- BUG FIX 3 & 4: Removed injected CF script tag; completed the truncated script block -->
+<script>
+    /* ---- BOOT ---- */
+    var msgs = [
+        { t: 'boot', m: 'Loading Arnabh Portfolio v1.0...' },
+        { t: 'ok',   m: 'Mounted /home/arnabh [ext4] successfully' },
+        { t: 'ok',   m: 'Started ECE Graduate daemon -- GTBIT Delhi 2023' },
+        { t: 'ok',   m: 'Loaded Quinte Financial Technologies module' },
+        { t: 'ok',   m: 'Started SP Industries Ops service [PID 2024]' },
+        { t: 'ok',   m: 'Initialised supply chain interfaces...' },
+        { t: 'warn', m: 'STATUS: open_to_work -- seeking PPC & Logistics roles' },
+        { t: 'ok',   m: 'Reached target: Multi-User Portfolio System' },
+        { t: 'ok',   m: 'Portfolio started. Welcome.' }
+    ];
+
+    var booted = false;
+    var bs = document.getElementById('boot-screen');
+    var container = document.getElementById('boot-lines');
+
+    function skipBoot() {
+        if (booted) return;
+        booted = true;
+        bs.classList.add('fade-out');
+        setTimeout(function() { bs.style.display = 'none'; }, 900);
+    }
+
+    document.addEventListener('keydown', skipBoot);
+    bs.addEventListener('click', skipBoot);
+
+    var delay = 80;
+    for (var i = 0; i < msgs.length; i++) {
+        (function(msg, idx) {
+            setTimeout(function() {
+                if (booted) return;
+                var line = document.createElement('div');
+                line.className = 'boot-line';
+                var badges = {
+                    ok:   '<span class="boot-badge ok">[  OK  ]</span>',
+                    boot: '<span class="boot-badge boot">[ BOOT ]</span>',
+                    warn: '<span class="boot-badge warn">[ WARN ]</span>'
+                };
+                line.innerHTML = badges[msg.t] + ' <span class="boot-msg">' + msg.m + '</span>';
+                container.appendChild(line);
+                setTimeout(function() { line.classList.add('visible'); }, 10);
+                if (idx === msgs.length - 1) {
+                    setTimeout(skipBoot, 1800);
+                }
+            }, delay);
+        })(msgs[i], i);
+        delay += (i < 2) ? 400 : 240;
+    }
+
+    /* ---- T&C MODAL ---- */
+    var overlay = document.getElementById('tos-overlay');
+
+    function openTos() { overlay.classList.add('open'); }
+    function closeTos() { overlay.classList.remove('open'); }
+
+    document.getElementById('tos-trigger').addEventListener('click', openTos);
+    document.getElementById('tos-close-btn').addEventListener('click', closeTos);
+    document.getElementById('tos-accept-btn').addEventListener('click', closeTos);
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) { closeTos(); }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') { closeTos(); }
+    });
+</script>
+
+</body>
+</html>
